@@ -17,7 +17,7 @@ pub struct Undef;
 #[xml(rename = "value", ns(EPP_XMLNS))]
 pub struct ResultValue {
     /// The `<undef>` element
-    pub undef: Undef,
+    pub undef: Option<Undef>,
 }
 
 /// Type corresponding to the `<extValue>` tag in an EPP response XML
@@ -314,7 +314,7 @@ mod tests {
     use crate::xml;
 
     #[test]
-    fn error() {
+    fn error_with_undef() {
         let xml = get_xml("response/error.xml").unwrap();
         let object = xml::deserialize::<ResponseStatus>(xml.as_str()).unwrap();
 
@@ -323,6 +323,21 @@ mod tests {
         assert_eq!(
             object.result.ext_value.unwrap().reason,
             "545 Object not found"
+        );
+        assert_eq!(object.tr_ids.client_tr_id.unwrap(), CLTRID);
+        assert_eq!(object.tr_ids.server_tr_id, SVTRID);
+    }
+
+    #[test]
+    fn error_with_value() {
+        let xml = get_xml("response/domain_renew_error.xml").unwrap();
+        let object = xml::deserialize::<ResponseStatus>(xml.as_str()).unwrap();
+
+        assert_eq!(object.result.code, ResultCode::ParameterValuePolicyError);
+        assert_eq!(object.result.message, "Parameter value policy error");
+        assert_eq!(
+            object.result.ext_value.unwrap().reason,
+            "V120 Invalid date '2028-01-21'"
         );
         assert_eq!(object.tr_ids.client_tr_id.unwrap(), CLTRID);
         assert_eq!(object.tr_ids.server_tr_id, SVTRID);
